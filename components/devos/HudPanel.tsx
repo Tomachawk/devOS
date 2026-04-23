@@ -1,5 +1,5 @@
 type HudPanelProps = {
-    title: string;
+    title?: string;
     children: React.ReactNode;
     className?: string;
 };

@@ -4,7 +4,7 @@ import PulseMarker from "./PulseMarker";
 
 export default function WorldMapPanel() {
     return (
-        <HudPanel className="h-[420px]">
+        <HudPanel title="Global Overview" className="h-[420px]">
             <div className="relative h-[350px] overflow-hidden rounded-sm border border-cyan-500/10 bg-[#07111e]">
                 <Image
                     src="/world-map.png"
