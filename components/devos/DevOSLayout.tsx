@@ -74,12 +74,6 @@ type SystemStatsResponse = {
         free_gb: number;
         usage_percent: number;
     };
-    network?: {
-        current?: {
-            download: number;
-            upload: number;
-        };
-    };
 };
 
 type MonitorItem = {
@@ -87,22 +81,41 @@ type MonitorItem = {
     value: number;
 };
 
+function formatNetwork(value: number) {
+    if (value >= 1000) {
+        return {
+            value: (value / 1000).toFixed(2),
+            suffix: "Gbps",
+        };
+    }
+
+    return {
+        value: value.toFixed(2),
+        suffix: "Mbps",
+    };
+}
+
 export default function DevOSLayout() {
     const [maxDownload, setMaxDownload] = useState(0);
+    const [currentDownload, setCurrentDownload] = useState(0);
     const [time, setTime] = useState("");
 
     const [cpuUsage, setCpuUsage] = useState(0);
     const [ramUsage, setRamUsage] = useState(0);
     const [storageUsage, setStorageUsage] = useState(0);
 
+    const networkDisplay = formatNetwork(maxDownload);
+
     useEffect(() => {
         const updateTime = () => {
             const now = new Date();
+
             const formatted = now.toLocaleTimeString("pl-PL", {
                 hour: "2-digit",
                 minute: "2-digit",
                 second: "2-digit",
             });
+
             setTime(formatted);
         };
 
@@ -149,9 +162,15 @@ export default function DevOSLayout() {
             { label: "CPU", value: cpuUsage },
             { label: "RAM", value: ramUsage },
             { label: "Storage", value: storageUsage },
-            { label: "Network", value: Math.min(Math.round(maxDownload), 100) },
+            {
+                label: "Network",
+                value:
+                    maxDownload > 0
+                        ? Math.min(Math.round((currentDownload / maxDownload) * 100), 100)
+                        : 0,
+            },
         ],
-        [cpuUsage, ramUsage, storageUsage, maxDownload]
+        [cpuUsage, ramUsage, storageUsage, currentDownload, maxDownload]
     );
 
     return (
@@ -159,6 +178,7 @@ export default function DevOSLayout() {
             <div className="relative min-h-screen overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(14,165,233,0.12),transparent_35%),linear-gradient(to_bottom,rgba(3,7,18,0.98),rgba(2,6,23,1))]" />
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
+
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
                 </div>
@@ -166,7 +186,6 @@ export default function DevOSLayout() {
                 <TopNav />
 
                 <div className="relative z-10 mx-auto grid max-w-[1920px] gap-5 p-6 xl:grid-cols-[1.15fr_2.35fr_1.15fr]">
-                    {/* left column */}
                     <div className="flex flex-col gap-5">
                         <HudPanel title="System Status" className="h-[260px]">
                             <div className="flex h-full items-center justify-center">
@@ -175,9 +194,11 @@ export default function DevOSLayout() {
                                         <div className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">
                                             CPU
                                         </div>
+
                                         <div className="mt-3 text-6xl font-semibold text-cyan-300">
                                             {cpuUsage}%
                                         </div>
+
                                         <div className="mt-2 text-sm uppercase tracking-[0.25em] text-cyan-400/60">
                                             Core Load
                                         </div>
@@ -218,17 +239,16 @@ export default function DevOSLayout() {
                         </HudPanel>
                     </div>
 
-                    {/* center */}
                     <div className="flex flex-col gap-5">
                         <div className="grid grid-cols-4 gap-4">
                             <StatCard title="Time" value={time} />
 
                             <HudPanel title="" className="min-h-[110px] overflow-hidden">
-                                <div className="relative h-full w-full bg-[#07111e] -top-[10px]">
+                                <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[10px]">
                                     <img
                                         src="/rog.gif"
                                         alt="ROG visual"
-                                        className="h-full w-full object-cover opacity-90 scale-130"
+                                        className="h-full w-full scale-[1.3] object-cover opacity-90"
                                     />
                                 </div>
                             </HudPanel>
@@ -237,8 +257,8 @@ export default function DevOSLayout() {
 
                             <StatCard
                                 title="NETWORK"
-                                value={maxDownload.toFixed(2)}
-                                suffix="Mbps"
+                                value={networkDisplay.value}
+                                suffix={networkDisplay.suffix}
                             />
                         </div>
 
@@ -251,14 +271,17 @@ export default function DevOSLayout() {
                                         <span>DevOS Platform</span>
                                         <span>85%</span>
                                     </div>
+
                                     <div className="flex justify-between text-cyan-200/80">
                                         <span>AI Dashboard</span>
                                         <span>62%</span>
                                     </div>
+
                                     <div className="flex justify-between text-cyan-200/80">
                                         <span>Mobile App</span>
                                         <span>40%</span>
                                     </div>
+
                                     <div className="flex justify-between text-cyan-200/80">
                                         <span>Landing Page</span>
                                         <span>90%</span>
@@ -266,30 +289,32 @@ export default function DevOSLayout() {
                                 </div>
                             </HudPanel>
 
-                            <HudPanel title="" className="max-h-[217px] overflow-hidden">
-                                <div className="relative h-full w-full bg-[#07111e] -top-[30px]">
+                            <HudPanel title="" className="h-[217px] overflow-hidden">
+                                <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[30px]">
                                     <img
                                         src="/visualization.gif"
                                         alt="Visualization"
-                                        className="h-full w-full object-cover opacity-90 scale-110"
+                                        className="h-full w-full scale-110 object-cover opacity-90"
                                     />
                                 </div>
                             </HudPanel>
                         </div>
                     </div>
 
-                    {/* right */}
                     <div className="flex flex-col gap-5">
-                        <NetworkActivity onMaxDownload={setMaxDownload} />
+                        <NetworkActivity
+                            onMaxDownload={setMaxDownload}
+                            onCurrentDownload={setCurrentDownload}
+                        />
 
-                        <HudPanel title="Global Overwiev" className="h-[220px]">
+                        <HudPanel title="Global Overview" className="h-[220px]">
                             <div className="relative flex h-full items-center justify-center overflow-hidden bg-[#07111e] -top-[40px]">
-                                <div className="absolute -top-40px inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_60%)]" />
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_60%)]" />
 
                                 <img
                                     src="/globus.gif"
                                     alt="Rotating globe"
-                                    className="relative z-10 h-[195px] w-[190px] object-contain opacity-85 mix-blend-screen scale-105"
+                                    className="relative z-10 h-[195px] w-[190px] scale-105 object-contain opacity-85 mix-blend-screen"
                                 />
 
                                 <div className="pointer-events-none absolute inset-0 rounded-sm border border-cyan-500/10" />
@@ -302,18 +327,22 @@ export default function DevOSLayout() {
                                     <span>OS Version</span>
                                     <span>DevOS 2.4.1</span>
                                 </div>
+
                                 <div className="flex justify-between">
                                     <span>Build</span>
                                     <span>2026.04.21</span>
                                 </div>
+
                                 <div className="flex justify-between">
                                     <span>Node</span>
                                     <span>v18.17.0</span>
                                 </div>
+
                                 <div className="flex justify-between">
                                     <span>Status</span>
                                     <span>Stable</span>
                                 </div>
+
                                 <div className="flex justify-between">
                                     <span>User</span>
                                     <span>admin</span>

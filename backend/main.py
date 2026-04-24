@@ -3,6 +3,7 @@ import shutil
 from collections import deque
 from time import time
 from typing import Any
+import subprocess
 
 import psutil
 from fastapi import FastAPI
@@ -34,14 +35,15 @@ def bytes_to_gb(value: int) -> float:
 
 
 def get_network_speed() -> dict[str, float]:
-    global last_counters, last_time
+    global last_counters, last_time, last_network_speed
 
     current_counters = psutil.net_io_counters()
     current_time = time()
 
     elapsed = current_time - last_time
-    if elapsed <= 0:
-        elapsed = 1
+
+    if elapsed < 0.8:
+        return last_network_speed
 
     bytes_sent_per_sec = (current_counters.bytes_sent - last_counters.bytes_sent) / elapsed
     bytes_recv_per_sec = (current_counters.bytes_recv - last_counters.bytes_recv) / elapsed
@@ -52,10 +54,12 @@ def get_network_speed() -> dict[str, float]:
     last_counters = current_counters
     last_time = current_time
 
-    return {
+    last_network_speed = {
         "download": round(download_mbps, 2),
         "upload": round(upload_mbps, 2),
     }
+
+    return last_network_speed
 
 
 def get_network_data() -> dict[str, Any]:

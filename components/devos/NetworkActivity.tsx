@@ -92,9 +92,6 @@ export default function NetworkActivity({
             }
         }
 
-        setSessionMaxDownload(0);
-        onMaxDownload(0);
-
         fetchStats();
         const interval = setInterval(fetchStats, 2000);
 
