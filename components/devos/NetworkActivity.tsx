@@ -22,6 +22,7 @@ type SystemStatsResponse = {
 
 type NetworkActivityProps = {
     onMaxDownload: (val: number) => void;
+    onCurrentDownload: (val: number) => void;
 };
 
 const CHART_WIDTH = 420;
@@ -53,6 +54,7 @@ function buildPath(
 
 export default function NetworkActivity({
     onMaxDownload,
+    onCurrentDownload,
 }: NetworkActivityProps) {
     const [data, setData] = useState({
         current: { download: 0, upload: 0 },
@@ -74,19 +76,18 @@ export default function NetworkActivity({
 
                 const json: SystemStatsResponse = await res.json();
                 const network = json.network;
+                const currentDownload = network.current.download;
 
-                if (mounted) {
-                    setData({
-                        current: network.current,
-                        history: network.history,
-                    });
+                if (!mounted) return;
 
-                    const currentDownload = network.current.download;
+                setData({
+                    current: network.current,
+                    history: network.history,
+                });
 
-                    setSessionMaxDownload((prev) => {
-                        return Math.max(prev, currentDownload);
-                    });
-                }
+                onCurrentDownload(currentDownload);
+
+                setSessionMaxDownload((prev) => Math.max(prev, currentDownload));
             } catch (error) {
                 console.error("Błąd pobierania danych sieci:", error);
             }
@@ -99,11 +100,11 @@ export default function NetworkActivity({
             mounted = false;
             clearInterval(interval);
         };
-    }, [onMaxDownload]);
+    }, [onCurrentDownload]);
 
     useEffect(() => {
         onMaxDownload(sessionMaxDownload);
-    }, [sessionMaxDownload]);
+    }, [sessionMaxDownload, onMaxDownload]);
 
     const chart = useMemo(() => {
         const downloads = data.history.map((item) => item.download);
