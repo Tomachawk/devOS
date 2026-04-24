@@ -84,9 +84,7 @@ export default function NetworkActivity({
                     const currentDownload = network.current.download;
 
                     setSessionMaxDownload((prev) => {
-                        const nextMax = Math.max(prev, currentDownload);
-                        onMaxDownload(nextMax);
-                        return nextMax;
+                        return Math.max(prev, currentDownload);
                     });
                 }
             } catch (error) {
@@ -105,6 +103,10 @@ export default function NetworkActivity({
             clearInterval(interval);
         };
     }, [onMaxDownload]);
+
+    useEffect(() => {
+        onMaxDownload(sessionMaxDownload);
+    }, [sessionMaxDownload]);
 
     const chart = useMemo(() => {
         const downloads = data.history.map((item) => item.download);
