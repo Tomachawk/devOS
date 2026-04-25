@@ -1,11 +1,16 @@
 from __future__ import annotations
+import feedparser
+import os
+import requests
+
 import shutil
+import subprocess
 from collections import deque
 from time import time
 from typing import Any
-import subprocess
 
 import psutil
+import yfinance as yf
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -28,10 +33,13 @@ app.add_middleware(
 history = deque(maxlen=30)
 last_counters = psutil.net_io_counters()
 last_time = time()
+last_network_speed = {"download": 0.0, "upload": 0.0}
+
+TECH_SYMBOLS = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META"]
 
 
 def bytes_to_gb(value: int) -> float:
-    return round(value / (1024 ** 3), 2)
+    return round(value / (1024**3), 2)
 
 
 def get_network_speed() -> dict[str, float]:
@@ -45,8 +53,12 @@ def get_network_speed() -> dict[str, float]:
     if elapsed < 0.8:
         return last_network_speed
 
-    bytes_sent_per_sec = (current_counters.bytes_sent - last_counters.bytes_sent) / elapsed
-    bytes_recv_per_sec = (current_counters.bytes_recv - last_counters.bytes_recv) / elapsed
+    bytes_sent_per_sec = (
+        current_counters.bytes_sent - last_counters.bytes_sent
+    ) / elapsed
+    bytes_recv_per_sec = (
+        current_counters.bytes_recv - last_counters.bytes_recv
+    ) / elapsed
 
     upload_mbps = (bytes_sent_per_sec * 8) / 1_000_000
     download_mbps = (bytes_recv_per_sec * 8) / 1_000_000
@@ -77,20 +89,18 @@ def get_network_data() -> dict[str, Any]:
     return {
         "current": speeds,
         "history": list(history),
-        "total_sent_mb": round(counters.bytes_sent / (1024 ** 2), 2),
-        "total_recv_mb": round(counters.bytes_recv / (1024 ** 2), 2),
+        "total_sent_mb": round(counters.bytes_sent / (1024**2), 2),
+        "total_recv_mb": round(counters.bytes_recv / (1024**2), 2),
     }
 
 
 def get_cpu_data() -> dict[str, Any]:
     usage_percent = psutil.cpu_percent(interval=0.5)
-    physical_cores = psutil.cpu_count(logical=False)
-    logical_cores = psutil.cpu_count(logical=True)
 
     return {
         "usage_percent": round(usage_percent, 2),
-        "physical_cores": physical_cores,
-        "logical_cores": logical_cores,
+        "physical_cores": psutil.cpu_count(logical=False),
+        "logical_cores": psutil.cpu_count(logical=True),
     }
 
 
@@ -151,7 +161,9 @@ def get_gpu_data() -> dict[str, Any] | None:
                         "memory_total_mb": round(memory_total_mb, 2),
                         "memory_usage_percent": round(
                             (memory_used_mb / memory_total_mb) * 100, 2
-                        ) if memory_total_mb else 0,
+                        )
+                        if memory_total_mb
+                        else 0,
                         "temperature_c": round(temperature_c, 2),
                     }
     except Exception as e:
@@ -174,12 +186,58 @@ def get_gpu_data() -> dict[str, Any] | None:
             "memory_total_mb": round(float(gpu.memoryTotal), 2),
             "memory_usage_percent": round(
                 (gpu.memoryUsed / gpu.memoryTotal) * 100, 2
-            ) if gpu.memoryTotal else 0,
+            )
+            if gpu.memoryTotal
+            else 0,
             "temperature_c": round(float(gpu.temperature), 2),
         }
     except Exception as e:
         print("GPU GPUTIL ERROR:", e)
         return None
+
+
+def get_stock_data(symbol: str) -> dict[str, Any]:
+    ticker = yf.Ticker(symbol)
+
+    try:
+        info = ticker.fast_info
+
+        price = float(
+            info.get("lastPrice")
+            or info.get("last_price")
+            or info.get("regularMarketPrice")
+            or 0
+        )
+
+        previous_close = float(
+            info.get("previousClose")
+            or info.get("previous_close")
+            or 0
+        )
+
+        if price == 0 or previous_close == 0:
+            history = ticker.history(period="5d", interval="1d")
+
+            if len(history) >= 2:
+                price = float(history["Close"].iloc[-1])
+                previous_close = float(history["Close"].iloc[-2])
+
+        change = price - previous_close if previous_close else 0
+        change_percent = (change / previous_close * 100) if previous_close else 0
+
+        return {
+            "price": round(price, 2),
+            "change": round(change, 2),
+            "change_percent": round(change_percent, 2),
+        }
+
+    except Exception as e:
+        return {
+            "price": 0,
+            "change": 0,
+            "change_percent": 0,
+            "error": str(e),
+        }
 
 
 @app.get("/")
@@ -194,16 +252,58 @@ def health() -> dict[str, str]:
 
 @app.get("/system/stats")
 def system_stats() -> dict[str, Any]:
-    cpu = get_cpu_data()
-    gpu = get_gpu_data()
-    ram = get_ram_data()
-    storage = get_storage_data()
-    network = get_network_data()
+    return {
+        "cpu": get_cpu_data(),
+        "gpu": get_gpu_data(),
+        "ram": get_ram_data(),
+        "storage": get_storage_data(),
+        "network": get_network_data(),
+    }
+
+
+@app.get("/stocks")
+def get_stocks() -> dict[str, Any]:
+    results = {}
+
+    for symbol in TECH_SYMBOLS:
+        try:
+            results[symbol] = get_stock_data(symbol)
+        except Exception as e:
+            results[symbol] = {
+                "price": 0,
+                "change": 0,
+                "change_percent": 0,
+                "error": str(e),
+            }
+
+    return results
+
+NEWSDATA_API_KEY = os.getenv("NEWSDATA_API_KEY", "pub_6f24c7b15c924421b974670e54e1ddec")
+
+TECH_NEWS_FEEDS = [
+    "https://www.theverge.com/rss/index.xml",
+    "https://feeds.arstechnica.com/arstechnica/technology-lab",
+    "https://techcrunch.com/feed/",
+]
+
+
+@app.get("/news")
+def get_tech_news() -> dict[str, Any]:
+    articles = []
+
+    for feed_url in TECH_NEWS_FEEDS:
+        feed = feedparser.parse(feed_url)
+
+        for entry in feed.entries[:3]:
+            articles.append(
+                {
+                    "title": entry.get("title", "No title"),
+                    "source": feed.feed.get("title", "Tech source"),
+                    "link": entry.get("link", ""),
+                }
+            )
 
     return {
-        "cpu": cpu,
-        "gpu": gpu,
-        "ram": ram,
-        "storage": storage,
-        "network": network,
+        "status": "success",
+        "articles": articles[:5],
     }

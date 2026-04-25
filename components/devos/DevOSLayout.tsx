@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import NetworkActivity from "./NetworkActivity";
 import HudPanel from "./HudPanel";
 import WorldMapPanel from "./WorldMapPanel";
+import StocksPanel from "./StocksPanel";
+import ActivityLog from "./ActivityLog";
+import CoreCircle from "./CoreCircle";
+import TechNewsPanel from "./TechNewsPanel";
 
 function TopNav() {
     return (
@@ -85,7 +89,7 @@ function formatNetwork(value: number) {
     if (value >= 1000) {
         return {
             value: (value / 1000).toFixed(2),
-            suffix: "Gbps",
+            suffix: "Mbps",
         };
     }
 
@@ -188,23 +192,7 @@ export default function DevOSLayout() {
                 <div className="relative z-10 mx-auto grid max-w-[1920px] gap-5 p-6 xl:grid-cols-[1.15fr_2.35fr_1.15fr]">
                     <div className="flex flex-col gap-5">
                         <HudPanel title="System Status" className="h-[260px]">
-                            <div className="flex h-full items-center justify-center">
-                                <div className="flex h-[170px] w-[170px] items-center justify-center rounded-full border border-cyan-400/40 text-center">
-                                    <div>
-                                        <div className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">
-                                            CPU
-                                        </div>
-
-                                        <div className="mt-3 text-6xl font-semibold text-cyan-300">
-                                            {cpuUsage}%
-                                        </div>
-
-                                        <div className="mt-2 text-sm uppercase tracking-[0.25em] text-cyan-400/60">
-                                            Core Load
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <CoreCircle value={cpuUsage} />
                         </HudPanel>
 
                         <HudPanel title="System Monitor" className="min-h-[260px]">
@@ -227,16 +215,7 @@ export default function DevOSLayout() {
                             </div>
                         </HudPanel>
 
-                        <HudPanel title="Activity Log" className="min-h-[252px]">
-                            <div className="space-y-2 text-[13px] leading-6 text-cyan-200/80">
-                                <div>14:23:15 — System initialized</div>
-                                <div>14:23:18 — Database connected</div>
-                                <div>14:23:21 — User login: admin</div>
-                                <div>14:23:33 — Files synced</div>
-                                <div>14:23:41 — Backup completed</div>
-                                <div>14:23:48 — Security check passed</div>
-                            </div>
-                        </HudPanel>
+                        <ActivityLog />
                     </div>
 
                     <div className="flex flex-col gap-5">
@@ -265,29 +244,7 @@ export default function DevOSLayout() {
                         <WorldMapPanel />
 
                         <div className="grid grid-cols-2 gap-5 items-stretch">
-                            <HudPanel title="Recent Projects" className="h-[217px]">
-                                <div className="space-y-3 text-sm">
-                                    <div className="flex justify-between text-cyan-200/80">
-                                        <span>DevOS Platform</span>
-                                        <span>85%</span>
-                                    </div>
-
-                                    <div className="flex justify-between text-cyan-200/80">
-                                        <span>AI Dashboard</span>
-                                        <span>62%</span>
-                                    </div>
-
-                                    <div className="flex justify-between text-cyan-200/80">
-                                        <span>Mobile App</span>
-                                        <span>40%</span>
-                                    </div>
-
-                                    <div className="flex justify-between text-cyan-200/80">
-                                        <span>Landing Page</span>
-                                        <span>90%</span>
-                                    </div>
-                                </div>
-                            </HudPanel>
+                            <StocksPanel />
 
                             <HudPanel title="" className="h-[217px] overflow-hidden">
                                 <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[30px]">
@@ -321,34 +278,7 @@ export default function DevOSLayout() {
                             </div>
                         </HudPanel>
 
-                        <HudPanel title="System Info" className="h-[210px]">
-                            <div className="space-y-3 text-sm text-cyan-200/80">
-                                <div className="flex justify-between">
-                                    <span>OS Version</span>
-                                    <span>DevOS 2.4.1</span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <span>Build</span>
-                                    <span>2026.04.21</span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <span>Node</span>
-                                    <span>v18.17.0</span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <span>Status</span>
-                                    <span>Stable</span>
-                                </div>
-
-                                <div className="flex justify-between">
-                                    <span>User</span>
-                                    <span>admin</span>
-                                </div>
-                            </div>
-                        </HudPanel>
+                        <TechNewsPanel />
 
                         <HudPanel title="Quick Access" className="h-[160px]">
                             <div className="grid grid-cols-2 gap-3">
