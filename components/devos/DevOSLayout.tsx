@@ -8,7 +8,6 @@ import StocksPanel from "./StocksPanel";
 import ActivityLog from "./ActivityLog";
 import CoreCircle from "./CoreCircle";
 import TechNewsPanel from "./TechNewsPanel";
-import MenuCircle from "./MenuCircle";
 
 function TopNav() {
     return (
