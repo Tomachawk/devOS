@@ -68,7 +68,14 @@ export default function NetworkActivity({
 
         async function fetchStats() {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/stats`);
+                const API = process.env.NEXT_PUBLIC_API_URL;
+
+                if (!API) {
+                    console.error("API URL not set");
+                    return;
+                }
+
+                const res = await fetch(`${API}/system/stats`);
 
                 if (!res.ok) return;
 
