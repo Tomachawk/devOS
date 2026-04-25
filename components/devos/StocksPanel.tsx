@@ -64,7 +64,7 @@ export default function StocksPanel() {
                                 <span className="font-semibold text-cyan-200">{symbol}</span>
 
                                 <span className="text-cyan-300/80">
-                                    ${data.price.toFixed(2)}
+                                    ${Number(data.price ?? 0).toFixed(2)}
                                 </span>
 
                                 <span
@@ -72,7 +72,7 @@ export default function StocksPanel() {
                                         }`}
                                 >
                                     {isUp ? "+" : ""}
-                                    {data.change_percent.toFixed(2)}%
+                                    Number(data.change_percent ?? 0).toFixed(2)
                                 </span>
                             </div>
                         );
