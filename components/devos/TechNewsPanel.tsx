@@ -23,7 +23,9 @@ export default function TechNewsPanel() {
 
         async function fetchNews() {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/stats`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/news`, {
+                    cache: "no-store",
+                });
 
                 if (!res.ok) return;
 
