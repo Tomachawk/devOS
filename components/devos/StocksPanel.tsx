@@ -20,9 +20,7 @@ export default function StocksPanel() {
 
         async function fetchStocks() {
             try {
-                const res = await fetch("http://127.0.0.1:8000/stocks", {
-                    cache: "no-store",
-                });
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/stats`);
 
                 if (!res.ok) return;
 

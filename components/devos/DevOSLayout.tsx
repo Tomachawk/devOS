@@ -8,6 +8,7 @@ import StocksPanel from "./StocksPanel";
 import ActivityLog from "./ActivityLog";
 import CoreCircle from "./CoreCircle";
 import TechNewsPanel from "./TechNewsPanel";
+import MenuCircle from "./MenuCircle";
 
 function TopNav() {
     return (
@@ -134,9 +135,7 @@ export default function DevOSLayout() {
 
         async function fetchSystemStats() {
             try {
-                const res = await fetch("http://127.0.0.1:8000/system/stats", {
-                    cache: "no-store",
-                });
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/stats`);
 
                 if (!res.ok) return;
 
