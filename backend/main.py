@@ -116,7 +116,10 @@ def get_ram_data() -> dict[str, Any]:
 
 
 def get_storage_data() -> dict[str, Any]:
-    disk = psutil.disk_usage("/")
+    try:
+        disk = psutil.disk_usage("C:\\")
+    except Exception:
+        disk = psutil.disk_usage("/")
 
     return {
         "used_gb": bytes_to_gb(disk.used),

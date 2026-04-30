@@ -71,7 +71,7 @@ export default function NetworkActivity({
                 const API = process.env.NEXT_PUBLIC_API_URL;
 
                 if (!API) {
-                    console.error("API URL not set");
+                    console.warn("API URL not set");
                     return;
                 }
 

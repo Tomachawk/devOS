@@ -11,6 +11,7 @@ export default function WorldMapPanel() {
                     alt="World map"
                     fill
                     priority
+                    sizes="(max-width: 1280px) 100vw, 33vw"
                     className="object-cover opacity-40 contrast-125 mix-blend-screen"
                 />
 

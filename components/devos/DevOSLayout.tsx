@@ -8,8 +8,34 @@ import StocksPanel from "./StocksPanel";
 import ActivityLog from "./ActivityLog";
 import CoreCircle from "./CoreCircle";
 import TechNewsPanel from "./TechNewsPanel";
+import AssetsLab from "./assets/AssetsLab";
 
-function TopNav() {
+type ActiveModule =
+    | "dashboard"
+    | "assets"
+    | "projects"
+    | "tasks"
+    | "ai"
+    | "tools"
+    | "settings";
+
+function TopNav({
+    activeModule,
+    setActiveModule,
+}: {
+    activeModule: ActiveModule;
+    setActiveModule: (module: ActiveModule) => void;
+}) {
+    const navItems: { label: string; value: ActiveModule }[] = [
+        { label: "Dashboard", value: "dashboard" },
+        { label: "Projects", value: "projects" },
+        { label: "Tasks", value: "tasks" },
+        { label: "AI Assistant", value: "ai" },
+        { label: "Tools", value: "tools" },
+        { label: "Assets", value: "assets" },
+        { label: "Settings", value: "settings" },
+    ];
+
     return (
         <header className="relative z-10 flex items-center justify-between border-b border-cyan-500/20 px-6 py-4">
             <div className="flex items-center gap-3">
@@ -20,12 +46,19 @@ function TopNav() {
             </div>
 
             <nav className="flex items-center gap-10 text-sm uppercase tracking-[0.2em] text-cyan-200/80">
-                <button>Dashboard</button>
-                <button>Projects</button>
-                <button>Tasks</button>
-                <button>AI Assistant</button>
-                <button>Tools</button>
-                <button>Settings</button>
+                {navItems.map((item) => (
+                    <button
+                        key={item.value}
+                        onClick={() => setActiveModule(item.value)}
+                        className={
+                            activeModule === item.value
+                                ? "text-cyan-300"
+                                : "transition hover:text-cyan-300"
+                        }
+                    >
+                        {item.label}
+                    </button>
+                ))}
             </nav>
 
             <div className="flex items-center gap-4 text-cyan-300/80">
@@ -100,6 +133,9 @@ function formatNetwork(value: number) {
 }
 
 export default function DevOSLayout() {
+    const [activeModule, setActiveModule] =
+        useState<ActiveModule>("dashboard");
+
     const [maxDownload, setMaxDownload] = useState(0);
     const [currentDownload, setCurrentDownload] = useState(0);
     const [time, setTime] = useState("");
@@ -134,7 +170,9 @@ export default function DevOSLayout() {
 
         async function fetchSystemStats() {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/system/stats`);
+                const res = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/system/stats`
+                );
 
                 if (!res.ok) return;
 
@@ -146,7 +184,7 @@ export default function DevOSLayout() {
                 setRamUsage(Math.round(data.ram.usage_percent));
                 setStorageUsage(Math.round(data.storage.usage_percent));
             } catch (error) {
-                console.error("Błąd pobierania system stats:", error);
+                console.warn("Błąd pobierania system stats:", error);
             }
         }
 
@@ -185,115 +223,123 @@ export default function DevOSLayout() {
                     <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
                 </div>
 
-                <TopNav />
+                <TopNav
+                    activeModule={activeModule}
+                    setActiveModule={setActiveModule}
+                />
 
-                <div className="relative z-10 mx-auto grid max-w-[1920px] gap-5 p-6 xl:grid-cols-[1.15fr_2.35fr_1.15fr]">
-                    <div className="flex flex-col gap-5">
-                        <HudPanel title="System Status" className="h-[260px]">
-                            <CoreCircle value={cpuUsage} />
-                        </HudPanel>
+                {activeModule === "dashboard" && (
+                    <div className="relative z-10 mx-auto grid max-w-[1920px] gap-5 p-6 xl:grid-cols-[1.15fr_2.35fr_1.15fr]">
+                        <div className="flex flex-col gap-5">
+                            <HudPanel title="System Status" className="h-[260px]">
+                                <CoreCircle value={cpuUsage} />
+                            </HudPanel>
 
-                        <HudPanel title="System Monitor" className="min-h-[260px]">
-                            <div className="space-y-5">
-                                {monitorItems.map((item) => (
-                                    <div key={item.label}>
-                                        <div className="mb-2 flex items-center justify-between text-sm text-cyan-200/80">
-                                            <span className="w-24">{item.label}</span>
-                                            <span>{item.value}%</span>
+                            <HudPanel title="System Monitor" className="min-h-[260px]">
+                                <div className="space-y-5">
+                                    {monitorItems.map((item) => (
+                                        <div key={item.label}>
+                                            <div className="mb-2 flex items-center justify-between text-sm text-cyan-200/80">
+                                                <span className="w-24">{item.label}</span>
+                                                <span>{item.value}%</span>
+                                            </div>
+
+                                            <div className="h-2 overflow-hidden rounded-full bg-cyan-950/80">
+                                                <div
+                                                    className="h-full rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.6)]"
+                                                    style={{ width: `${item.value}%` }}
+                                                />
+                                            </div>
                                         </div>
+                                    ))}
+                                </div>
+                            </HudPanel>
 
-                                        <div className="h-2 overflow-hidden rounded-full bg-cyan-950/80">
-                                            <div
-                                                className="h-full rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.6)]"
-                                                style={{ width: `${item.value}%` }}
-                                            />
-                                        </div>
+                            <ActivityLog />
+                        </div>
+
+                        <div className="flex flex-col gap-5">
+                            <div className="grid grid-cols-4 gap-4">
+                                <StatCard title="Time" value={time} />
+
+                                <HudPanel title="" className="min-h-[110px] overflow-hidden">
+                                    <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[10px]">
+                                        <img
+                                            src="/rog.gif"
+                                            alt="ROG visual"
+                                            className="h-full w-full scale-[1.3] object-cover opacity-90"
+                                        />
                                     </div>
-                                ))}
-                            </div>
-                        </HudPanel>
+                                </HudPanel>
 
-                        <ActivityLog />
-                    </div>
+                                <StatCard title="RAM Usage" value={`${ramUsage}%`} />
 
-                    <div className="flex flex-col gap-5">
-                        <div className="grid grid-cols-4 gap-4">
-                            <StatCard title="Time" value={time} />
-
-                            <HudPanel title="" className="min-h-[110px] overflow-hidden">
-                                <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[10px]">
-                                    <img
-                                        src="/rog.gif"
-                                        alt="ROG visual"
-                                        className="h-full w-full scale-[1.3] object-cover opacity-90"
-                                    />
-                                </div>
-                            </HudPanel>
-
-                            <StatCard title="RAM Usage" value={`${ramUsage}%`} />
-
-                            <StatCard
-                                title="NETWORK"
-                                value={networkDisplay.value}
-                                suffix={networkDisplay.suffix}
-                            />
-                        </div>
-
-                        <WorldMapPanel />
-
-                        <div className="grid grid-cols-2 gap-5 items-stretch">
-                            <StocksPanel />
-
-                            <HudPanel title="" className="h-[217px] overflow-hidden">
-                                <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[30px]">
-                                    <img
-                                        src="/visualization.gif"
-                                        alt="Visualization"
-                                        className="h-full w-full scale-110 object-cover opacity-90"
-                                    />
-                                </div>
-                            </HudPanel>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-5">
-                        <NetworkActivity
-                            onMaxDownload={setMaxDownload}
-                            onCurrentDownload={setCurrentDownload}
-                        />
-
-                        <HudPanel title="Global Overview" className="h-[220px]">
-                            <div className="relative flex h-full items-center justify-center overflow-hidden bg-[#07111e] -top-[40px]">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_60%)]" />
-
-                                <img
-                                    src="/globus.gif"
-                                    alt="Rotating globe"
-                                    className="relative z-10 h-[195px] w-[190px] scale-105 object-contain opacity-85 mix-blend-screen"
+                                <StatCard
+                                    title="NETWORK"
+                                    value={networkDisplay.value}
+                                    suffix={networkDisplay.suffix}
                                 />
-
-                                <div className="pointer-events-none absolute inset-0 rounded-sm border border-cyan-500/10" />
                             </div>
-                        </HudPanel>
 
-                        <TechNewsPanel />
+                            <WorldMapPanel />
 
-                        <HudPanel title="Quick Access" className="h-[160px]">
-                            <div className="grid grid-cols-2 gap-3">
-                                {["New Project", "AI Assistant", "File Manager", "Terminal"].map(
-                                    (item) => (
-                                        <button
-                                            key={item}
-                                            className="border border-cyan-500/30 bg-cyan-950/30 px-3 py-3 text-sm text-cyan-200/90 transition hover:bg-cyan-900/40"
-                                        >
-                                            {item}
-                                        </button>
-                                    )
-                                )}
+                            <div className="grid grid-cols-2 gap-5 items-stretch">
+                                <StocksPanel />
+
+                                <HudPanel title="" className="h-[217px] overflow-hidden">
+                                    <div className="relative h-full w-full overflow-hidden bg-[#07111e] -top-[30px]">
+                                        <img
+                                            src="/visualization.gif"
+                                            alt="Visualization"
+                                            className="h-full w-full scale-110 object-cover opacity-90"
+                                        />
+                                    </div>
+                                </HudPanel>
                             </div>
-                        </HudPanel>
+                        </div>
+
+                        <div className="flex flex-col gap-5">
+                            <NetworkActivity
+                                onMaxDownload={setMaxDownload}
+                                onCurrentDownload={setCurrentDownload}
+                            />
+
+                            <HudPanel title="Global Overview" className="h-[220px]">
+                                <div className="relative flex h-full items-center justify-center overflow-hidden bg-[#07111e] -top-[40px]">
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.08),transparent_60%)]" />
+
+                                    <img
+                                        src="/globus.gif"
+                                        alt="Rotating globe"
+                                        className="relative z-10 h-[195px] w-[190px] scale-105 object-contain opacity-85 mix-blend-screen"
+                                    />
+
+                                    <div className="pointer-events-none absolute inset-0 rounded-sm border border-cyan-500/10" />
+                                </div>
+                            </HudPanel>
+
+                            <TechNewsPanel />
+
+                            <HudPanel title="Quick Access" className="h-[160px]">
+                                <div className="grid grid-cols-2 gap-3">
+                                    {["New Project", "AI Assistant", "File Manager", "Terminal"].map(
+                                        (item) => (
+                                            <button
+                                                key={item}
+                                                className="border border-cyan-500/30 bg-cyan-950/30 px-3 py-3 text-sm text-cyan-200/90 transition hover:bg-cyan-900/40"
+                                            >
+                                                {item}
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+                            </HudPanel>
+                        </div>
                     </div>
-                </div>
+                )}
+                {activeModule === "assets" && (
+                    <AssetsLab onClose={() => setActiveModule("dashboard")} />
+                )}
             </div>
         </main>
     );
