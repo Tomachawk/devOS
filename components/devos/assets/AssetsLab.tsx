@@ -1,16 +1,18 @@
 "use client";
 
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Script from "next/script";
 import { pairAsset } from "./assetPairing";
 
 const ModelViewer = "model-viewer" as any;
 
+const ASSETS = ["chiron", "jesko", "regera", "vegeta", "zombie", "mecha"];
+
 type LoadingStage =
     | "WAITING FOR ASSET"
-    | "SCANNING FILE"
+    | "SCANNING ASSET"
     | "MATCHING BLUEPRINT"
-    | "PAIRING DATA"
+    | "LOADING 3D VIEWER"
     | "RENDER MODULE ONLINE";
 
 export default function AssetsLab({ onClose }: { onClose: () => void }) {
@@ -26,22 +28,16 @@ export default function AssetsLab({ onClose }: { onClose: () => void }) {
         setBlueprintError(false);
     }, [selectedFile]);
 
-    function handleUpload(event: ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-
-        if (!file) return;
-
-        setSelectedFile(file.name);
+    function handleSelectAsset(asset: string) {
+        setSelectedFile(`${asset}.glb`);
         setBlueprintError(false);
         setIsReady(false);
-        setLoadingStage("SCANNING FILE");
+        setLoadingStage("SCANNING ASSET");
 
         setTimeout(() => setLoadingStage("MATCHING BLUEPRINT"), 700);
-        setTimeout(() => setLoadingStage("PAIRING DATA"), 1400);
+        setTimeout(() => setLoadingStage("LOADING 3D VIEWER"), 1400);
         setTimeout(() => setLoadingStage("RENDER MODULE ONLINE"), 2100);
-        setTimeout(() => setIsReady(true), 2800);
-
-        event.target.value = "";
+        setTimeout(() => setIsReady(true), 2600);
     }
 
     return (
@@ -53,6 +49,8 @@ export default function AssetsLab({ onClose }: { onClose: () => void }) {
 
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                 <div className="relative w-[1200px] max-w-[95%] rounded-sm border border-cyan-500/20 bg-[#07111e]/90 p-6 shadow-[0_0_40px_rgba(34,211,238,0.15)]">
+
+                    {/* CLOSE */}
                     <button
                         onClick={onClose}
                         className="absolute right-4 top-2 text-cyan-400/70 hover:text-cyan-300"
@@ -60,41 +58,47 @@ export default function AssetsLab({ onClose }: { onClose: () => void }) {
                         ✕
                     </button>
 
+                    {/* HEADER */}
                     <div className="mb-6 flex items-center justify-between">
                         <div>
                             <h2 className="text-2xl font-semibold tracking-[0.2em] text-cyan-300">
                                 ASSETS LAB
                             </h2>
                             <p className="mt-2 text-sm text-cyan-400/60">
-                                Auto-pairing model files with blueprint documentation
+                                Generated 3D assets + blueprint pairing system
                             </p>
                         </div>
 
-                        <div>
-                            <input
-                                type="file"
-                                accept=".glb,.png"
-                                onChange={handleUpload}
-                                className="hidden"
-                                id="asset-upload"
-                            />
+                        {/* LIBRARY */}
+                        <div className="flex flex-col items-end gap-3">
+                            <div className="text-xs uppercase tracking-[0.3em] text-cyan-400/60">
+                                Asset Library
+                            </div>
 
-                            <label
-                                htmlFor="asset-upload"
-                                className="cursor-pointer border border-cyan-500/40 bg-cyan-950/40 px-5 py-3 text-sm uppercase tracking-[0.25em] text-cyan-200 hover:bg-cyan-900/50"
-                            >
-                                Upload Asset
-                            </label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {ASSETS.map((asset) => (
+                                    <button
+                                        key={asset}
+                                        onClick={() => handleSelectAsset(asset)}
+                                        className="border border-cyan-500/30 bg-cyan-950/40 px-3 py-2 text-xs uppercase tracking-[0.2em] text-cyan-200 transition hover:scale-105 hover:bg-cyan-900/50"
+                                    >
+                                        {asset}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
+                    {/* LOADING */}
                     {!isReady && (
                         <HudCornerFrame>
                             <div className="flex h-full flex-col items-center justify-center text-center">
                                 <div className="mb-5 h-16 w-16 animate-spin rounded-full border border-cyan-400/20 border-t-cyan-300" />
+
                                 <div className="text-lg uppercase tracking-[0.3em] text-cyan-300">
                                     {loadingStage}
                                 </div>
+
                                 <div className="mt-3 text-xs uppercase tracking-[0.25em] text-cyan-500/70">
                                     Processing: {selectedFile ?? "NO FILE"}
                                 </div>
@@ -102,9 +106,11 @@ export default function AssetsLab({ onClose }: { onClose: () => void }) {
                         </HudCornerFrame>
                     )}
 
+                    {/* VIEWER */}
                     {isReady && (
                         <>
                             <div className="grid grid-cols-2 gap-5">
+                                {/* MODEL */}
                                 <div className="min-h-[360px] bg-transparent p-4">
                                     <div className="mb-3 text-xs uppercase tracking-[0.25em] text-cyan-400/60">
                                         Model
@@ -135,6 +141,7 @@ export default function AssetsLab({ onClose }: { onClose: () => void }) {
                                     </HudCornerFrame>
                                 </div>
 
+                                {/* BLUEPRINT */}
                                 <div className="min-h-[360px] bg-transparent p-4">
                                     <div className="mb-3 text-xs uppercase tracking-[0.25em] text-cyan-400/60">
                                         Blueprint
@@ -157,6 +164,7 @@ export default function AssetsLab({ onClose }: { onClose: () => void }) {
                                 </div>
                             </div>
 
+                            {/* STATUS */}
                             <div className="mt-5 grid grid-cols-4 gap-4 text-sm text-cyan-200/80">
                                 <div>Input: {selectedFile ?? "NO FILE"}</div>
                                 <div>Base: {pair?.baseName ?? "—"}</div>
