@@ -18,9 +18,7 @@ export default function AICorePanel() {
             try {
                 setLoading(true);
 
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/ai/system-insight`
-                );
+                const res = await fetch("/api/ai/system-insight");
 
                 const data: AIResponse = await res.json();
 
