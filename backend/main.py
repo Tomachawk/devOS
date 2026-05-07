@@ -2,7 +2,9 @@ from __future__ import annotations
 import feedparser
 import os
 import requests
-
+from dotenv import load_dotenv
+from openai import OpenAI
+from pathlib import Path
 import shutil
 import subprocess
 from collections import deque
@@ -13,6 +15,12 @@ import psutil
 import yfinance as yf
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+env_path = Path(__file__).resolve().parent.parent / ".env.local"
+load_dotenv(env_path)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+print("ENV PATH:", env_path)
+print("OPENAI KEY EXISTS:", bool(os.getenv("OPENAI_API_KEY")))
 
 try:
     import GPUtil
@@ -309,4 +317,34 @@ def get_tech_news() -> dict[str, Any]:
     return {
         "status": "success",
         "articles": articles[:5],
+    }
+
+@app.get("/ai/system-insight")
+def ai_system_insight() -> dict[str, Any]:
+    stats = system_stats()
+
+    prompt = f"""
+Analyze this DevOS system telemetry and return a short, professional system insight.
+
+CPU: {stats["cpu"]}
+RAM: {stats["ram"]}
+Storage: {stats["storage"]}
+Network: {stats["network"]["current"]}
+
+Return:
+- system status
+- potential issue
+- recommendation
+
+Keep it concise.
+"""
+
+    response = client.responses.create(
+    model="gpt-4.1-mini",
+    input=prompt,
+)
+
+    return {
+        "status": "success",
+        "insight": response.output_text,
     }

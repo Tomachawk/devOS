@@ -5,7 +5,7 @@ import NetworkActivity from "./NetworkActivity";
 import HudPanel from "./HudPanel";
 import WorldMapPanel from "./WorldMapPanel";
 import StocksPanel from "./StocksPanel";
-import ActivityLog from "./ActivityLog";
+import AICorePanel from "./AICorePanel";
 import CoreCircle from "./CoreCircle";
 import TechNewsPanel from "./TechNewsPanel";
 import AssetsLab from "./assets/AssetsLab";
@@ -255,7 +255,7 @@ export default function DevOSLayout() {
                                 </div>
                             </HudPanel>
 
-                            <ActivityLog />
+                            <AICorePanel />
                         </div>
 
                         <div className="flex flex-col gap-5">
