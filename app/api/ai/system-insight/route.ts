@@ -5,12 +5,20 @@ const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function GET() {
+export async function POST(request: Request) {
     try {
+        const data = await request.json();
+
         const response = await client.responses.create({
             model: "gpt-4.1-mini",
             input: `
-Analyze DevOS system status.
+Analyze current DevOS telemetry.
+
+CPU usage: ${data.cpuUsage}%
+RAM usage: ${data.ramUsage}%
+Storage usage: ${data.storageUsage}%
+Current network download: ${data.currentDownload} Mbps
+Session max download: ${data.maxDownload} Mbps
 
 Return:
 - system status

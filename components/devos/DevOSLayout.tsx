@@ -255,7 +255,13 @@ export default function DevOSLayout() {
                                 </div>
                             </HudPanel>
 
-                            <AICorePanel />
+                            <AICorePanel
+                                cpuUsage={cpuUsage}
+                                ramUsage={ramUsage}
+                                storageUsage={storageUsage}
+                                currentDownload={currentDownload}
+                                maxDownload={maxDownload}
+                            />
                         </div>
 
                         <div className="flex flex-col gap-5">

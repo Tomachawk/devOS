@@ -9,7 +9,21 @@ type AIResponse = {
     message?: string;
 };
 
-export default function AICorePanel() {
+type AICorePanelProps = {
+    cpuUsage: number;
+    ramUsage: number;
+    storageUsage: number;
+    currentDownload: number;
+    maxDownload: number;
+};
+
+export default function AICorePanel({
+    cpuUsage,
+    ramUsage,
+    storageUsage,
+    currentDownload,
+    maxDownload,
+}: AICorePanelProps) {
     const [insight, setInsight] = useState("Waiting for AI analysis...");
     const [loading, setLoading] = useState(true);
 
@@ -18,7 +32,19 @@ export default function AICorePanel() {
             try {
                 setLoading(true);
 
-                const res = await fetch("/api/ai/system-insight");
+                const res = await fetch("/api/ai/system-insight", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        cpuUsage,
+                        ramUsage,
+                        storageUsage,
+                        currentDownload,
+                        maxDownload,
+                    }),
+                });
 
                 const data: AIResponse = await res.json();
 
@@ -40,7 +66,7 @@ export default function AICorePanel() {
         const interval = setInterval(fetchAIInsight, 30000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [cpuUsage, ramUsage, storageUsage, currentDownload, maxDownload]);
 
     return (
         <HudPanel title="AI Core" className="min-h-[252px]">
@@ -52,11 +78,13 @@ export default function AICorePanel() {
 
                 <div>
                     <span className="text-cyan-500/70">{">"}</span>{" "}
-                    {loading ? "Analyzing system telemetry..." : "OpenAI analysis complete."}
+                    {loading
+                        ? "Analyzing system telemetry..."
+                        : "OpenAI analysis complete."}
                     <span className="ml-1 animate-pulse text-cyan-300">█</span>
                 </div>
 
-                <div className="max-h-[140px] overflow-y-auto whitespace-pre-line border-t border-cyan-500/10 pt-3 pr-2 text-cyan-200/70 custom-scroll">
+                <div className="custom-scroll max-h-[140px] overflow-y-auto whitespace-pre-line border-t border-cyan-500/10 pt-3 pr-2 text-cyan-200/70">
                     {insight}
                 </div>
             </div>
